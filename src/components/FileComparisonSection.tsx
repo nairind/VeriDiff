@@ -63,7 +63,7 @@ const FileComparisonSection: React.FC = () => {
       formData.append('file1', file1);
       formData.append('file2', file2);
 
-      const response = await fetch('/api/get_column_suggestions', {
+      const response = await fetch('/.netlify/functions/get_column_suggestions', {
         method: 'POST',
         body: formData,
       });
@@ -114,7 +114,7 @@ const FileComparisonSection: React.FC = () => {
       formData.append('numeric_only', 'true');
       formData.append('selected_columns', JSON.stringify(selectedColumns));
 
-      const response = await fetch('/api/compare_files', {
+      const response = await fetch('/.netlify/functions/compare', {
         method: 'POST',
         body: formData,
       });
