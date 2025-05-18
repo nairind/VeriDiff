@@ -65,7 +65,7 @@ const DemoFileComparisonSection: React.FC = () => {
       formData.append('numeric_only', 'true');
       formData.append('demo_mode', 'true'); // Indicate this is demo mode
 
-      const response = await fetch('/api/compare_files_demo', {
+      const response = await fetch('/.netlify/functions/compare_demo', {
         method: 'POST',
         body: formData,
       });
