@@ -27,6 +27,7 @@ const DemoFileComparisonSection: React.FC = () => {
   const [comparisonResults, setComparisonResults] = useState<ComparisonSummary | null>(null);
   const [step, setStep] = useState<'upload' | 'results'>('upload');
   const [showSignupPrompt, setShowSignupPrompt] = useState(false);
+  
   const fileInput1Ref = useRef<HTMLInputElement>(null);
   const fileInput2Ref = useRef<HTMLInputElement>(null);
 
@@ -65,7 +66,8 @@ const DemoFileComparisonSection: React.FC = () => {
       formData.append('numeric_only', 'true');
       formData.append('demo_mode', 'true'); // Indicate this is demo mode
 
-      const response = await fetch('/.netlify/functions/compare_demo', {
+      // Updated API endpoint to use Netlify Functions
+      const response = await fetch('/.netlify/functions/compare', {
         method: 'POST',
         body: formData,
       });
@@ -102,7 +104,7 @@ const DemoFileComparisonSection: React.FC = () => {
     setStep('upload');
     setError(null);
     setShowSignupPrompt(false);
-    
+
     // Reset file inputs
     if (fileInput1Ref.current) fileInput1Ref.current.value = '';
     if (fileInput2Ref.current) fileInput2Ref.current.value = '';
@@ -135,7 +137,7 @@ const DemoFileComparisonSection: React.FC = () => {
               <li>Custom tolerance settings</li>
               <li>Export and share results</li>
             </ul>
-            <Button 
+            <Button
               onClick={() => window.location.href = '/signup'}
               className="bg-blue-600 hover:bg-blue-700 mt-2"
             >
@@ -176,14 +178,13 @@ const DemoFileComparisonSection: React.FC = () => {
               {file2 && <p className="mt-1 text-sm text-gray-500">{file2.name}</p>}
             </div>
 
-            <Button 
-              onClick={handleUpload} 
+            <Button
+              onClick={handleUpload}
               disabled={!file1 || !file2 || isLoading}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
               {isLoading ? 'Processing...' : 'Compare Files'}
             </Button>
-            
             <p className="text-xs text-gray-500 text-center mt-3">
               Demo limited to files under 100KB and shows up to 3 differences
             </p>
@@ -238,7 +239,7 @@ const DemoFileComparisonSection: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {result.SOURCE_1_VALUE}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {result.SOURCE_2_VALUE}
                         </td>
                       </tr>
@@ -249,23 +250,16 @@ const DemoFileComparisonSection: React.FC = () => {
             ) : (
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
                 <p className="font-semibold">No differences found!</p>
-                <p>The selected columns in both files match perfectly.</p>
+                <p>The numeric values in both files match perfectly.</p>
               </div>
             )}
 
-            <div className="mt-8 flex justify-center space-x-4">
-              <Button 
+            <div className="mt-8 text-center">
+              <Button
                 onClick={resetComparison}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-gray-600 hover:bg-gray-700"
               >
-                Compare New Files
-              </Button>
-              
-              <Button 
-                onClick={() => window.location.href = '/signup'}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                Sign Up For Full Access
+                Compare Different Files
               </Button>
             </div>
           </div>
