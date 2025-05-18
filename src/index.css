@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: light dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Add padding to account for fixed header */
+main {
+  padding-top: 70px;
+}
+
+/* Smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom styles for active navigation links */
+.active {
+  color: #2563eb; /* blue-600 */
+  font-weight: 500;
+}
+
+/* Animation for feature cards */
+.feature-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Custom button styles */
+.btn-primary {
+  @apply bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out;
+}
+
+.btn-secondary {
+  @apply bg-transparent hover:bg-white hover:text-blue-800 text-white font-bold py-3 px-6 rounded-lg border-2 border-white transition duration-300 ease-in-out;
+}
+
+/* Mobile menu styles */
+.mobile-menu {
+  @apply fixed inset-0 bg-white z-50 flex flex-col items-center justify-center;
+}
+
+.mobile-menu-item {
+  @apply text-xl py-4 text-gray-800 hover:text-blue-600;
+}
