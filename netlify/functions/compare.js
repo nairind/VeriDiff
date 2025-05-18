@@ -1,14 +1,12 @@
 const busboy = require('busboy');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
 
 exports.handler = async function(event, context) {
   // Set CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
   };
 
   // Handle preflight OPTIONS request
@@ -16,7 +14,7 @@ exports.handler = async function(event, context) {
     return {
       statusCode: 200,
       headers,
-      body: ''
+      body: JSON.stringify({ message: 'CORS preflight successful' })
     };
   }
 
@@ -28,108 +26,126 @@ exports.handler = async function(event, context) {
     };
   }
 
-  return new Promise((resolve, reject) => {
-    const bb = busboy({ headers: event.headers });
-    const tmpdir = os.tmpdir();
-    const files = {};
-    const fields = {};
-
-    bb.on('file', (fieldname, file, info) => {
-      const { filename, encoding, mimeType } = info;
-      const filepath = path.join(tmpdir, filename);
-      files[fieldname] = {
-        filepath,
-        filename,
-        encoding,
-        mimeType
-      };
-      
-      const writeStream = fs.createWriteStream(filepath);
-      file.pipe(writeStream);
-    });
-
-    bb.on('field', (fieldname, val) => {
-      fields[fieldname] = val;
-    });
-
-    bb.on('finish', async () => {
-      try {
-        // For demo purposes, return a mock comparison result
-        // In a real implementation, you would analyze the files here
-        
-        const mockResults = {
-          total_records: 10,
-          differences_found: 3,
-          within_tolerance: 0,
-          potential_numeric_columns: ["Amount", "Quantity", "Price"],
-          results: [
-            {
-              ID: "1",
-              COLUMN: "Amount",
-              SOURCE_1_VALUE: "1000",
-              SOURCE_2_VALUE: "1000",
-              STATUS: "match"
-            },
-            {
-              ID: "2",
-              COLUMN: "Amount",
-              SOURCE_1_VALUE: "2000",
-              SOURCE_2_VALUE: "2100",
-              STATUS: "difference"
-            },
-            {
-              ID: "3",
-              COLUMN: "Price",
-              SOURCE_1_VALUE: "45.50",
-              SOURCE_2_VALUE: "45.00",
-              STATUS: "difference"
-            }
-          ]
-        };
-
-        // Clean up temporary files
-        for (const fileObj of Object.values(files)) {
-          fs.unlinkSync(fileObj.filepath);
+  try {
+    // Parse the multipart form data
+    const formData = await parseMultipartForm(event);
+    
+    // Mock comparison results
+    const results = {
+      total_records: 5,
+      differences_found: 3,
+      within_tolerance: 0,
+      potential_numeric_columns: ["Amount", "Quantity", "Price", "Total"],
+      results: [
+        {
+          ID: "1",
+          COLUMN: "Amount",
+          SOURCE_1_VALUE: "1000",
+          SOURCE_2_VALUE: "1000",
+          STATUS: "match"
+        },
+        {
+          ID: "2",
+          COLUMN: "Amount",
+          SOURCE_1_VALUE: "2000",
+          SOURCE_2_VALUE: "2100",
+          STATUS: "difference"
+        },
+        {
+          ID: "3",
+          COLUMN: "Price",
+          SOURCE_1_VALUE: "50.00",
+          SOURCE_2_VALUE: "55.00",
+          STATUS: "difference"
+        },
+        {
+          ID: "4",
+          COLUMN: "Quantity",
+          SOURCE_1_VALUE: "10",
+          SOURCE_2_VALUE: "12",
+          STATUS: "difference"
+        },
+        {
+          ID: "5",
+          COLUMN: "Total",
+          SOURCE_1_VALUE: "500",
+          SOURCE_2_VALUE: "500",
+          STATUS: "match"
         }
+      ]
+    };
 
-        resolve({
-          statusCode: 200,
-          headers,
-          body: JSON.stringify({
-            success: true,
-            results: mockResults
-          })
-        });
-      } catch (error) {
-        console.error('Error processing files:', error);
-        resolve({
-          statusCode: 500,
-          headers,
-          body: JSON.stringify({
-            success: false,
-            error: 'Failed to process files: ' + error.message
-          })
-        });
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ results })
+    };
+  } catch (error) {
+    console.error('Error processing files:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Failed to compare files', details: error.message })
+    };
+  }
+};
+
+// Function to parse multipart form data
+function parseMultipartForm(event) {
+  return new Promise((resolve, reject) => {
+    const formData = {
+      files: {},
+      fields: {}
+    };
+
+    // If no body or content-type, return empty form data
+    if (!event.body || !event.headers['content-type']) {
+      return resolve(formData);
+    }
+
+    const bb = busboy({ 
+      headers: { 
+        'content-type': event.headers['content-type'] || event.headers['Content-Type'] 
       }
     });
 
-    bb.on('error', (err) => {
-      console.error('Error parsing form data:', err);
-      resolve({
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Failed to parse form data: ' + err.message
-        })
+    // Handle file uploads
+    bb.on('file', (fieldname, file, info) => {
+      const { filename, encoding, mimeType } = info;
+      let fileContent = '';
+      
+      file.on('data', (data) => {
+        fileContent += data.toString();
+      });
+      
+      file.on('end', () => {
+        formData.files[fieldname] = {
+          filename,
+          content: fileContent,
+          encoding,
+          mimeType
+        };
       });
     });
 
-    // Convert the base64 body to a buffer if it's base64 encoded
-    const bodyBuffer = event.isBase64Encoded
-      ? Buffer.from(event.body, 'base64')
-      : event.body;
+    // Handle regular form fields
+    bb.on('field', (fieldname, value) => {
+      formData.fields[fieldname] = value;
+    });
 
-    bb.end(bodyBuffer);
+    // Handle parsing completion
+    bb.on('finish', () => {
+      resolve(formData);
+    });
+
+    // Handle errors
+    bb.on('error', (error) => {
+      reject(error);
+    });
+
+    // Parse the request body
+    const bodyBuffer = Buffer.from(event.body, event.isBase64Encoded ? 'base64' : 'utf8');
+    bb.write(bodyBuffer);
+    bb.end();
   });
-};
+}
