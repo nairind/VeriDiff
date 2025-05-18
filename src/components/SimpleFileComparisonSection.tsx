@@ -25,6 +25,7 @@ const SimpleFileComparisonSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [comparisonResults, setComparisonResults] = useState<ComparisonSummary | null>(null);
   const [step, setStep] = useState<'upload' | 'results'>('upload');
+  
   const fileInput1Ref = useRef<HTMLInputElement>(null);
   const fileInput2Ref = useRef<HTMLInputElement>(null);
 
@@ -54,8 +55,9 @@ const SimpleFileComparisonSection: React.FC = () => {
       formData.append('file1', file1);
       formData.append('file2', file2);
       formData.append('numeric_only', 'true');
-
-      const response = await fetch('/api/compare_files', {
+      
+      // Updated API endpoint to use Netlify Functions
+      const response = await fetch('/.netlify/functions/compare', {
         method: 'POST',
         body: formData,
       });
@@ -81,14 +83,14 @@ const SimpleFileComparisonSection: React.FC = () => {
     setComparisonResults(null);
     setStep('upload');
     setError(null);
-    
+
     // Reset file inputs
     if (fileInput1Ref.current) fileInput1Ref.current.value = '';
     if (fileInput2Ref.current) fileInput2Ref.current.value = '';
   };
 
   return (
-    <section id="file-comparison" className="py-16 bg-white">
+    <section id="file-comparison-simple" className="py-16 bg-white">
       <div className="container mx-auto px-6">
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
           Compare Your Files
@@ -135,8 +137,8 @@ const SimpleFileComparisonSection: React.FC = () => {
               {file2 && <p className="mt-1 text-sm text-gray-500">{file2.name}</p>}
             </div>
 
-            <Button 
-              onClick={handleUpload} 
+            <Button
+              onClick={handleUpload}
               disabled={!file1 || !file2 || isLoading}
               className="w-full bg-blue-600 hover:bg-blue-700"
             >
@@ -155,7 +157,7 @@ const SimpleFileComparisonSection: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <p>Differences Found: {comparisonResults.differences_found}</p>
-                  <p>Matching Values: {comparisonResults.within_tolerance}</p>
+                  <p>Within Tolerance: {comparisonResults.within_tolerance}</p>
                 </div>
               </div>
             </div>
@@ -181,7 +183,7 @@ const SimpleFileComparisonSection: React.FC = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {comparisonResults.results.map((result, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
+                      <tr key={index} className={result.STATUS === 'difference' ? 'bg-red-50' : 'hover:bg-gray-50'}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {result.ID}
                         </td>
@@ -191,7 +193,7 @@ const SimpleFileComparisonSection: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {result.SOURCE_1_VALUE}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {result.SOURCE_2_VALUE}
                         </td>
                       </tr>
@@ -202,16 +204,16 @@ const SimpleFileComparisonSection: React.FC = () => {
             ) : (
               <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
                 <p className="font-semibold">No differences found!</p>
-                <p>The selected columns in both files match perfectly.</p>
+                <p>The values in both files match perfectly.</p>
               </div>
             )}
 
-            <div className="mt-8 flex justify-center">
-              <Button 
+            <div className="mt-8 text-center">
+              <Button
                 onClick={resetComparison}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                Compare New Files
+                Compare Different Files
               </Button>
             </div>
           </div>
